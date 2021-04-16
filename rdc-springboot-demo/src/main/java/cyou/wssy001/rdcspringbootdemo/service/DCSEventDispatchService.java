@@ -1,8 +1,10 @@
 package cyou.wssy001.rdcspringbootdemo.service;
 
+import com.alibaba.fastjson.JSON;
 import cyou.wssy001.rdcspringbootdemo.dto.EventDto;
 import cyou.wssy001.rdcspringbootdemo.entity.EventType;
 import cyou.wssy001.rdcspringbootdemo.handler.EventHandler;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -17,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version: v1.0
  */
 @Service
+@Slf4j
 public class DCSEventDispatchService implements AutoCloseable {
     private Map<EventType, EventHandler> handlers = new ConcurrentHashMap<>();
 
@@ -26,7 +29,8 @@ public class DCSEventDispatchService implements AutoCloseable {
 
     public void dispatch(EventDto eventDto) {
         EventType eventType = EventType.getTypeByName(eventDto.getEvent());
-        handlers.get(eventType).handle(eventType, eventDto);
+        EventHandler handler = handlers.get(eventType);
+        if (handler != null) handler.handle(eventType, eventDto);
     }
 
     @Override

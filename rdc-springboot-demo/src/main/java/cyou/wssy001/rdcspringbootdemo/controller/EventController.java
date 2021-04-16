@@ -41,8 +41,8 @@ public class EventController {
             return "成功";
         };
 
-        // 指定3s的超时
-        WebAsyncTask<String> webTask = new WebAsyncTask<>(3000, callable);
+        // 指定1s的超时
+        WebAsyncTask<String> webTask = new WebAsyncTask<>(1000, callable);
 
         webTask.onTimeout(() -> {
             log.info("******超时返回");
