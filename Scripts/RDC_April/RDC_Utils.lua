@@ -2,35 +2,37 @@ RDC = RDC or {}
 
 --[[
     Project: Rabbit DCS Cloud
-    Version: April
-    Component: Utils - 可复用小工具存放处
-    Author: NatanashaKtyushaRabbit
-    Created_at: 2021-02-23
+    Version: April (alpha version)
+    Component: 可复用方法
+    Copyright (C) 2021  LEO CAT
     License: GPL v3
-    Sequence: 1
+    Sequence: 2
 ]]--
 
+-- functions define
+-- Attention: Non-ed-lua-engine-standard log
 function RDC.info(msg)
     msg = tostring(msg)
-    local newMsg = 'RDC ==> INFO ==> ' .. msg
-    net.log(newMsg)
+    log.write('LuaNET', log.INFO, 'RDC -> ' .. msg)
 end
 
 
+-- Attention: Non-ed-lua-engine-standard log
 function RDC.warn(msg)
     msg = tostring(msg)
-    local newMsg = 'RDC ==> WARN ==> ' .. msg
-    net.log(newMsg)
+    log.write('LuaNET', log.WARNING, 'RDC -> ' .. msg)
 end
 
 
+-- Attention: Non-ed-lua-engine-standard log
 function RDC.error(msg)
     msg = tostring(msg)
-    local newMsg = 'RDC ==> ERROR ==> ' .. msg
-    net.log(newMsg)
+    log.write('LuaNET', log.ERROR, 'RDC -> ' .. msg)
 end
 
 
+-- inside game script can't fetch players ucid
+-- but we can still use the player name to search ucid
 function RDC.nameToUcid(playerName)
     for _, uid in pairs(net.get_player_list()) do
         if playerName == net.get_player_info(uid, 'name') then
@@ -42,26 +44,25 @@ function RDC.nameToUcid(playerName)
 end
 
 
+-- active push events to callback interface
 function RDC.postData(data)
-    local request_body = 'data=' .. data
+    local request_body = data
     local response_body = {}
-       
-    RDC.http.request{
-        url = RDC.PUSH_URL,
+
+    local _, code, _ = RDC.http.request{
+        url = RDC.pushUrl,
         method = "POST",
         headers =
             {
-                ["Content-Type"] = "application/x-www-form-urlencoded";
+                ["Content-Type"] = "application/json";
                 ["Content-Length"] = #request_body;
             },
-            source = RDC.ltn12.source.string(request_body),
-            sink = RDC.ltn12.sink.table(response_body),
-        }
-        -- rstab = Dkits.eval(table.concat(response_body))
-        -- if not rstab then
-        --     Dkits.info('ERROR = Dkits.eval func failed, str = ' .. table.concat(response_body))
-        -- end
-        -- return rstab
+        source = RDC.ltn12.source.string(request_body),
+        sink = RDC.ltn12.sink.table(response_body),
+    }
+    if code ~= 200 then
+        -- fuse->fused role check
+    end
 end
 
 
@@ -82,14 +83,97 @@ end
 
 
 function RDC.valInTable(val, tbl)
-   for _, v in ipairs(tbl) do
-      if v == val then
-          return true
-      end
-    end
-   return false
-end
------------------------->===external packages===<------------------------
+    for _, v in ipairs(tbl) do
+       if v == val then
+           return true
+       end
+     end
+    return false
+ end
+ 
+ 
+ -- basic response headers
+ function RDC.SHP.HttpBasicResponseHeaders(headerLine)
+     local resp = headerLine .. "\r\n"
+     resp = resp .. "Server: " .. RDC.SHP.httpServerName .. "\r\n"
+     resp = resp .. "Connection: close\r\n"
+     resp = resp .. "Date: " .. os.date("%a, %d %b %Y %X GMT\r\n")
+     return resp
+ end
+ 
+ 
+ -- 400 Bad Request
+ function RDC.SHP.HttpClientError_400()
+     local body = [[
+         <html>
+           <head>
+             <title>400 Bad Request</title>
+           </head>
+           <body>
+             <div style="width: 100%; text-align: center;">
+               <h1>400 Bad Request</h1>
+               <hr />
+               <span>Rabbit DCS Cloud - RDC April</span>
+             </div>
+           </body>
+         </html>
+     ]]
+     local resp = RDC.SHP.HttpBasicResponseHeaders("400 Bad Request")
+     resp = resp .. "Content-Type: text/html\r\n"
+     resp = resp .. "Content-Length: " .. #body .. "\r\n\r\n"
+     resp = resp .. body
+     return resp
+ end
+ 
+ 
+ -- 404 Not Found
+ function RDC.SHP.HttpClientError_404()
+     local body = [[
+         <html>
+           <head>
+             <title>404 Not Found</title>
+           </head>
+           <body>
+             <div style="width: 100%; text-align: center;">
+               <h1>404 Not Found</h1>
+               <hr />
+               <span>Rabbit DCS Cloud - RDC April</span>
+             </div>
+           </body>
+         </html>
+     ]]
+     local resp = RDC.SHP.HttpBasicResponseHeaders("404 Not Found")
+     resp = resp .. "Content-Type: text/html\r\n"
+     resp = resp .. "Content-Length: " .. #body ..  "\r\n\r\n"
+     resp = resp .. body
+     return resp
+ end
+ 
+ 
+ -- 405 Method Not Allow
+ function RDC.SHP.HttpClientError_405()
+     local body = [[
+         <html>
+           <head>
+             <title>405 Method Not Allowed</title>
+           </head>
+           <body>
+             <div style="width: 100%; text-align: center;">
+               <h1>405 Method Not Allow</h1>
+               <hr />
+               <span>Rabbit DCS Cloud - RDC April</span>
+             </div>
+           </body>
+         </html>
+     ]]
+     local resp = RDC.SHP.HttpBasicResponseHeaders("405 Method Not Allowed")
+     resp = resp .. "Content-Type: text/html\r\n"
+     resp = resp .. "Content-Length: " .. #body ..  "\r\n\r\n"
+     resp = resp .. body
+     return resp
+ end
+
+ ------------------------>===external packages===<------------------------
 --- split: string split function and iterator for Lua
 --
 -- Peter Aronoff
@@ -1812,4 +1896,4 @@ RDC.JSON = (loadstring([[
     return OBJDEF:new()
 ]]))()
 
-RDC.info("Utils loaded!")
+RDC.info("RDC.Utils.lua loaded!")
